@@ -24,7 +24,7 @@ filters + question + playhead → useViewModel (paths, events, heatmap, hotspots
 
 **One JSON per map** (not per match): the browser holds a whole map, so filters, heatmaps and hotspots recompute **instantly** for any date, match, player type or playback time. **Frontend layout:** `lib/` is pure logic (URL state, hotspots, panel text: unit-tested), `hooks/` holds data loading, playback and derived data, and `components/` only render. The canvas redraws in one `requestAnimationFrame` per frame and caches the path layer while zooming, so 60k-point views stay at 60 fps.
 
-**Question layer:** six "lenses" (*Where do players die?* …) are filter presets plus explanation text. The panel's numbers and **top-3 hotspots** (16×16 grid, 3×3 neighbourhood, non-max suppression) are computed live from whatever is on screen, so explanations always match the map.
+**Question layer:** six "lenses" (*Where do players die?* …) are filter presets plus explanation text. The panel's numbers and **top-3 hotspots** (16×16 grid, 3×3 neighbourhood, non-max suppression) are computed live from whatever is on screen, so explanations always match the map. The same 16×16 grid is drawn as **rulers** around the map (A–P, 1–16), so every hotspot also gets a grid square designers can quote ("Mine Pit · H9").
 
 ## Coordinate mapping (the tricky part)
 
@@ -64,4 +64,4 @@ px = u * 1024                   py = (1 - v) * 1024     ← flip: image Y grows 
 | Charts/dashboard vs map-first + questions | Map-first, question bar, plain-language panel | Users are level designers: they think in places, not tables. |
 | Leaflet/Mapbox vs plain canvas | Plain canvas | No projection needed; one affine transform is easy to reason about. |
 
-**Reliability & security** (details in README): URL inputs validated against real maps/matches; strict CSP and anti-framing headers; downloads time out and retry. **Tests:** 10 pipeline tests (`python -m unittest discover pipeline`), 19 frontend tests and ESLint (`npm run check`).
+**Reliability & security** (details in README): URL inputs validated against real maps/matches; strict CSP and anti-framing headers; downloads time out and retry. **Tests:** 10 pipeline tests (`python -m unittest discover pipeline`), 20 frontend tests and ESLint (`npm run check`).

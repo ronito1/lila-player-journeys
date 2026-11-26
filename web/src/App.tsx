@@ -192,7 +192,7 @@ export default function App() {
               heat={view.heat}
               hotspots={view.hotspots}
               focus={focus}
-              backdrop={theme === "dark" ? "#0b0d12" : "#e4e7ed"}
+              theme={theme}
               fullscreen={fullscreen}
               onToggleFullscreen={toggleFullscreen}
               onOpenMatch={openMatch}

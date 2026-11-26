@@ -31,6 +31,7 @@ MAPS = {
     "Lockdown": {"scale": 1000, "origin_x": -500, "origin_z": -500, "image": "Lockdown_Minimap.jpg"},
 }
 MINIMAP_EXPORT_PX = 2048  # exported image resolution (crisp when zoomed); drawn into 1024 space
+THUMB_PX = 96  # small preview shown next to each map in the sidebar
 
 # Raw event name -> category shown in the UI. Events are always logged at the position
 # of the file's owner, from the owner's point of view.
@@ -194,10 +195,12 @@ def export_minimaps() -> None:
     Image.MAX_IMAGE_PIXELS = None
     for map_id, cfg in MAPS.items():
         out = MINIMAP_OUT / f"{map_id}.jpg"
-        if out.exists():
+        thumb = MINIMAP_OUT / f"{map_id}_thumb.jpg"
+        if out.exists() and thumb.exists():
             continue
         img = Image.open(RAW_DIR / "minimaps" / cfg["image"]).convert("RGB")
         img.resize((MINIMAP_EXPORT_PX, MINIMAP_EXPORT_PX), Image.LANCZOS).save(out, quality=85, optimize=True)
+        img.resize((THUMB_PX, THUMB_PX), Image.LANCZOS).save(thumb, quality=80, optimize=True)
 
 
 def main() -> None:

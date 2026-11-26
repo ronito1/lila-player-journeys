@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { GameEvent, Journey } from "../lib/types";
 import type { Hotspot } from "../lib/insights";
-import { COLORS, drawMarker } from "../lib/style";
+import { COLORS, ACCENT, drawMarker } from "../lib/style";
+import { GRID, gridCol, gridRow } from "../lib/insights";
 import { clock, describeEvent } from "../lib/format";
 import { IconExpand, IconFit, IconMinus, IconPlus, IconShrink } from "./Icons";
 
@@ -23,7 +24,7 @@ interface Props {
   heat: HTMLCanvasElement | null;
   hotspots: Hotspot[];
   focus: FocusRequest | null;
-  backdrop: string;
+  theme: "dark" | "light";
   fullscreen: boolean;
   onToggleFullscreen: () => void;
   onOpenMatch: (matchId: string) => void;
@@ -48,6 +49,14 @@ const STEP = 1.6; // zoom factor for buttons / keys
 const CACHE_PX = 2048; // resolution of the cached path layer
 const CACHE_MIN_POINTS = 4000; // below this, paths are cheap enough to always draw live
 const MARKER_ORDER = { loot: 0, death: 1, storm: 2, kill: 3 } as const; // combat drawn on top of loot
+const RULER = 20; // grid-reference ruler along the top and left edges (screen px)
+
+// Canvas colours per theme (the canvas cannot read CSS variables cheaply every frame).
+const INK = {
+  dark: { backdrop: "#0a0f11", grid: "rgba(231,238,234,0.06)", rulerBg: "rgba(16,23,26,0.94)", rulerLine: "#22303a", label: "#7f908d", tick: "#3a4a50", hot: ACCENT },
+  light: { backdrop: "#dfe5e2", grid: "rgba(15,26,28,0.07)", rulerBg: "rgba(251,252,251,0.95)", rulerLine: "#cfd8d4", label: "#5d6b66", tick: "#b3bfba", hot: "#9a6206" },
+};
+const FONT_MONO = '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace';
 
 /**
  * Rendering model: all drawing happens in one requestAnimationFrame callback that reads the latest
@@ -55,7 +64,7 @@ const MARKER_ORDER = { loot: 0, death: 1, storm: 2, kill: 3 } as const; // comba
  * burst of wheel events costs one draw, never a queue of draws.
  */
 export default function MapView(props: Props) {
-  const { imageUrl, mapSize, journeys, events, showPaths, time, singleMatch, heat, hotspots, focus, backdrop, fullscreen, onToggleFullscreen, onOpenMatch } = props;
+  const { imageUrl, mapSize, journeys, events, showPaths, time, singleMatch, heat, hotspots, focus, theme, fullscreen, onToggleFullscreen, onOpenMatch } = props;
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState({ w: 800, h: 600 });
@@ -83,12 +92,14 @@ export default function MapView(props: Props) {
   const pointers = useRef(new Map<number, { x: number; y: number }>());
   const gesture = useRef<{ moved: boolean; pinchDist?: number; mid?: { x: number; y: number } }>({ moved: false });
 
-  const baseScale = () => Math.min(sizeRef.current.w, sizeRef.current.h) / mapSize;
+  // The map fits the area beside the rulers; `centre` is that area's middle on screen.
+  const baseScale = () => Math.min(sizeRef.current.w - RULER, sizeRef.current.h - RULER) / mapSize;
   const scaleNow = () => baseScale() * viewRef.current.zoom;
+  const centre = () => ({ ox: RULER + (sizeRef.current.w - RULER) / 2, oy: RULER + (sizeRef.current.h - RULER) / 2 });
   const toScreen = (x: number, y: number): [number, number] => {
     const s = scaleNow();
-    const { w, h } = sizeRef.current;
-    return [(x - viewRef.current.cx) * s + w / 2, (y - viewRef.current.cy) * s + h / 2];
+    const { ox, oy } = centre();
+    return [(x - viewRef.current.cx) * s + ox, (y - viewRef.current.cy) * s + oy];
   };
 
   // ---- drawing ------------------------------------------------------------------------
@@ -103,14 +114,30 @@ export default function MapView(props: Props) {
     const scale = scaleNow();
 
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.fillStyle = L.backdrop;
+    const ink = INK[L.theme];
+    const { ox, oy } = centre();
+    ctx.fillStyle = ink.backdrop;
     ctx.fillRect(0, 0, w, h);
 
     ctx.save();
-    ctx.translate(w / 2, h / 2);
+    ctx.translate(ox, oy);
     ctx.scale(scale, scale);
     ctx.translate(-view.cx, -view.cy);
-    if (imgRef.current) ctx.drawImage(imgRef.current, 0, 0, L.mapSize, L.mapSize);
+    if (imgRef.current) {
+      ctx.drawImage(imgRef.current, 0, 0, L.mapSize, L.mapSize);
+      // faint reference grid: the same 16×16 cells the hotspots are counted in
+      const cell = L.mapSize / GRID;
+      ctx.beginPath();
+      for (let i = 1; i < GRID; i++) {
+        ctx.moveTo(i * cell, 0);
+        ctx.lineTo(i * cell, L.mapSize);
+        ctx.moveTo(0, i * cell);
+        ctx.lineTo(L.mapSize, i * cell);
+      }
+      ctx.lineWidth = 1 / scale;
+      ctx.strokeStyle = ink.grid;
+      ctx.stroke();
+    }
     if (L.heat) {
       ctx.globalAlpha = 0.85;
       ctx.imageSmoothingEnabled = true;
@@ -166,13 +193,13 @@ export default function MapView(props: Props) {
       const by = sy - R * 0.71;
       ctx.beginPath();
       ctx.arc(bx, by, 11, 0, Math.PI * 2);
-      ctx.fillStyle = "#ffffff";
+      ctx.fillStyle = ACCENT;
       ctx.fill();
       ctx.lineWidth = 2;
       ctx.strokeStyle = "rgba(0,0,0,0.6)";
       ctx.stroke();
-      ctx.fillStyle = "#111";
-      ctx.font = "700 12px Inter, system-ui, sans-serif";
+      ctx.fillStyle = "#1a1204";
+      ctx.font = `700 12px ${FONT_MONO}`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(String(i + 1), bx, by + 0.5);
@@ -187,6 +214,8 @@ export default function MapView(props: Props) {
       ctx.lineWidth = 2;
       ctx.stroke();
     }
+
+    drawRulers(ctx, w, h, toScreen(0, 0), L.mapSize / GRID * scale, L.hotspots, ink);
 
     if (Math.abs(view.zoom - zoomLabelRef.current) > 0.01) {
       zoomLabelRef.current = view.zoom;
@@ -236,7 +265,11 @@ export default function MapView(props: Props) {
     pathVersion.current++;
     requestDraw();
   }, [journeys, time, showPaths, singleMatch, requestDraw]);
-  useEffect(requestDraw, [events, heat, hotspots, backdrop, requestDraw]);
+  useEffect(requestDraw, [events, heat, hotspots, theme, requestDraw]);
+  // canvas text uses the web fonts: redraw once they have loaded
+  useEffect(() => {
+    document.fonts?.ready.then(requestDraw);
+  }, [requestDraw]);
 
   // ---- view maths ------------------------------------------------------------------------
   const clampView = (v: View): View => ({
@@ -247,13 +280,13 @@ export default function MapView(props: Props) {
 
   /** View after zooming by `factor` around screen point (sx, sy), keeping that point still. */
   const zoomedAround = (v: View, factor: number, sx: number, sy: number): View => {
-    const { w, h } = sizeRef.current;
+    const { ox, oy } = centre();
     const s0 = baseScale() * v.zoom;
-    const mx = (sx - w / 2) / s0 + v.cx;
-    const my = (sy - h / 2) / s0 + v.cy;
+    const mx = (sx - ox) / s0 + v.cx;
+    const my = (sy - oy) / s0 + v.cy;
     const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, v.zoom * factor));
     const s1 = baseScale() * zoom;
-    return clampView({ zoom, cx: mx - (sx - w / 2) / s1, cy: my - (sy - h / 2) / s1 });
+    return clampView({ zoom, cx: mx - (sx - ox) / s1, cy: my - (sy - oy) / s1 });
   };
 
   const animateTo = (target: View) => {
@@ -276,8 +309,8 @@ export default function MapView(props: Props) {
   };
 
   const zoomBy = (factor: number) => {
-    const { w, h } = sizeRef.current;
-    animateTo(zoomedAround(viewRef.current, factor, w / 2, h / 2));
+    const { ox, oy } = centre();
+    animateTo(zoomedAround(viewRef.current, factor, ox, oy));
   };
   const resetView = () => animateTo(fitView());
 
@@ -544,4 +577,57 @@ function drawPaths(ctx: CanvasRenderingContext2D, journeys: Journey[], time: num
   }
   ctx.globalAlpha = 1;
   ctx.setLineDash([]);
+}
+
+/**
+ * Grid-reference rulers (columns A–P along the top, rows 1–16 down the left), pinned to the
+ * viewport edges and following pan/zoom. Columns and rows that contain a hotspot are lit.
+ */
+function drawRulers(
+  ctx: CanvasRenderingContext2D, w: number, h: number, origin: [number, number], cellPx: number,
+  hotspots: Hotspot[], ink: (typeof INK)["dark"],
+) {
+  const R = RULER;
+  const hotCols = new Set(hotspots.map((hs) => gridCol(hs.x)));
+  const hotRows = new Set(hotspots.map((hs) => gridRow(hs.y)));
+  const every = cellPx < 16 ? 2 : 1; // thin out labels when cells get tiny
+  ctx.save();
+  ctx.fillStyle = ink.rulerBg;
+  ctx.fillRect(0, 0, w, R);
+  ctx.fillRect(0, R, R, h - R);
+  ctx.fillStyle = ink.rulerLine;
+  ctx.fillRect(0, R - 1, w, 1);
+  ctx.fillRect(R - 1, 0, 1, h);
+  ctx.font = `500 10px ${FONT_MONO}`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  for (let i = 0; i < GRID; i++) {
+    // columns
+    const x0 = origin[0] + i * cellPx;
+    if (x0 + cellPx > R && x0 < w) {
+      ctx.fillStyle = ink.tick;
+      if (x0 > R) ctx.fillRect(Math.round(x0), R - 6, 1, 5);
+      const cx = x0 + cellPx / 2;
+      if (i % every === 0 && cx > R + 4 && cx < w - 4) {
+        const hot = hotCols.has(i);
+        ctx.fillStyle = hot ? ink.hot : ink.label;
+        ctx.font = `${hot ? 700 : 500} 10px ${FONT_MONO}`;
+        ctx.fillText(String.fromCharCode(65 + i), cx, R / 2);
+      }
+    }
+    // rows
+    const y0 = origin[1] + i * cellPx;
+    if (y0 + cellPx > R && y0 < h) {
+      ctx.fillStyle = ink.tick;
+      if (y0 > R) ctx.fillRect(R - 6, Math.round(y0), 5, 1);
+      const cy = y0 + cellPx / 2;
+      if (i % every === 0 && cy > R + 4 && cy < h - 4) {
+        const hot = hotRows.has(i);
+        ctx.fillStyle = hot ? ink.hot : ink.label;
+        ctx.font = `${hot ? 700 : 500} 10px ${FONT_MONO}`;
+        ctx.fillText(String(i + 1), R / 2, cy);
+      }
+    }
+  }
+  ctx.restore();
 }

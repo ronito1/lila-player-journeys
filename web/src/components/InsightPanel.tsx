@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Hotspot, MatchStory, Moment } from "../lib/insights";
-import { pct } from "../lib/insights";
+import { gridRef, pct } from "../lib/insights";
 import { clock } from "../lib/format";
 import MarkerIcon from "./MarkerIcon";
 
@@ -98,14 +98,21 @@ export default function InsightPanel(p: Props) {
                       <li key={i}>
                         <button onClick={() => p.onFocus(h.x, h.y, 3)}>
                           <span className="hs-badge">{i + 1}</span>
-                          <span className="hs-place">{h.place}</span>
-                          <span className="hs-share">
-                            <b>{pct(h.share)}</b> {p.hotspotNoun}
+                          <span className="hs-body">
+                            <span className="hs-line">
+                              <span className="hs-place">{h.place}</span>
+                              <span className="hs-ref" title="Grid square (see the rulers around the map)">{gridRef(h.x, h.y)}</span>
+                              <b className="hs-pct">{pct(h.share)}</b>
+                            </span>
+                            <span className="hs-bar" aria-hidden>
+                              <span style={{ width: `${Math.max(4, h.share * 100)}%` }} />
+                            </span>
                           </span>
                         </button>
                       </li>
                     ))}
                   </ol>
+                  <p className="hs-caption">Percent {p.hotspotNoun}. Grid squares (e.g. H9) match the rulers around the map.</p>
                 </>
               )}
               {p.next && <p className="next">{p.next}</p>}

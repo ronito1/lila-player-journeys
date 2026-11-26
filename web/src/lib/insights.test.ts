@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findHotspots, matchStory, placeName, viewStats, type Bounds } from "./insights";
+import { findHotspots, gridRef, matchStory, placeName, viewStats, type Bounds } from "./insights";
 import { clock } from "./format";
 import type { GameEvent, Journey } from "./types";
 
@@ -69,5 +69,13 @@ describe("matchStory", () => {
   it("says the player survived when there is no death", () => {
     const story = matchStory([ev("Loot", 1, 1, 10)], journeys, "AmbroseValley", bounds, clock);
     expect(story.summary).toContain("survived to the end of the recording");
+  });
+});
+
+describe("gridRef", () => {
+  it("names the 16×16 grid square shown on the map rulers", () => {
+    expect(gridRef(0, 0)).toBe("A1");
+    expect(gridRef(490, 560)).toBe("H9"); // Mine Pit
+    expect(gridRef(1024, 1024)).toBe("P16"); // the far edge stays on the grid
   });
 });

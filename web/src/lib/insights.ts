@@ -84,7 +84,7 @@ export function placeName(x: number, y: number, mapId: string, b: Bounds): strin
  */
 export function findHotspots(points: Array<[number, number]>, mapSize: number, mapId: string, b: Bounds, k = 3): Hotspot[] {
   if (points.length < 5) return [];
-  const G = 16;
+  const G = GRID;
   const cell = mapSize / G;
   const n = new Float64Array(G * G);
   const sx = new Float64Array(G * G);
@@ -240,3 +240,13 @@ export function matchStory(events: GameEvent[], journeys: Journey[], mapId: stri
     .map((e) => ({ t: e.t, ev: e, text: momentText(e), place: placeName(e.x, e.y, mapId, b) }));
   return { summary: parts.join(" "), moments, lootCount: loot };
 }
+
+// ---- grid references ------------------------------------------------------------------
+/** The map is read as a 16×16 grid (the same cells hotspots are counted in): columns A–P, rows 1–16. */
+export const GRID = 16;
+const MAP_UNITS = 1024;
+const cellOf = (v: number) => Math.min(GRID - 1, Math.max(0, Math.floor((v / MAP_UNITS) * GRID)));
+export const gridCol = (x: number) => cellOf(x);
+export const gridRow = (y: number) => cellOf(y);
+/** e.g. (490, 560) -> "H9" */
+export const gridRef = (x: number, y: number) => `${String.fromCharCode(65 + gridCol(x))}${gridRow(y) + 1}`;

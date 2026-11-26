@@ -11,7 +11,7 @@ A browser tool for **Level Designers** to see how players actually move, fight, 
 | Feature | How |
 |---|---|
 | **Ask a question** | A question bar above the map answers the six things a designer asks: *Where do players go? · Where do fights happen? · Where do players die? · Where does the storm catch people? · Where is the loot? · What happens in a match?* One click sets up the right view. |
-| **Explanation panel** | Says in plain words what the map shows, gives the key numbers (e.g. cause of death, storm timing), circles and numbers the **top 3 hotspots** on the map with their share (click to zoom), and suggests what to look at next. |
+| **Explanation panel** | Says in plain words what the map shows, gives the key numbers (e.g. cause of death, storm timing), circles and numbers the **top 3 hotspots** on the map with their share and grid square (click to zoom), and suggests what to look at next. |
 | **Match story** | For a single match: a one-line summary of what happened to the player, plus a clickable timeline of key moments that jumps playback and the map to that spot. |
 | **Pick a map, date and match** | Sidebar. "All matches" overlays every match on the map. Pick one match to replay it. |
 | **See player journeys on the minimap** | Humans = solid green lines, bots = dashed blue lines. World coordinates are mapped to the minimap ([how](ARCHITECTURE.md#coordinate-mapping-the-tricky-part)). |
@@ -20,6 +20,7 @@ A browser tool for **Level Designers** to see how players actually move, fight, 
 | **Heatmaps** | Traffic, kills, deaths, storm deaths and loot. They follow every filter, including the timeline (e.g. "deaths in the first 3 minutes"). |
 | **Jump from pattern to cause** | In the aggregate view, click any marker to open the match it came from. |
 | **Share a view** | Map, date, match and heatmap are kept in the URL. **Share** copies a link to exactly what you see. |
+| **Grid references** | Rulers along the map edges (columns A–P, rows 1–16) follow zoom and pan, so a spot can be named like *Mine Pit · H9*. Columns and rows that hold a hotspot are highlighted. |
 | **Zoom & pan** | +/−/fit buttons with a zoom readout, scroll or trackpad pinch, touch pinch, drag to pan, double-click to zoom in, keys `+` `−` `0`. |
 | **Guided tour** | First-time visitors get a "New here?" card (top right) that walks through each part of the UI, spotlighting it. **Guide** reopens it at any time. |
 | **Light / dark mode** | Toggle in the top bar. Remembers your choice and defaults to the OS setting. |
@@ -36,7 +37,7 @@ A browser tool for **Level Designers** to see how players actually move, fight, 
 ## Tech stack
 
 - **Data pipeline:** Python 3.10+, pandas, pyarrow, Pillow (`pipeline/build_data.py`)
-- **Frontend:** React 19, TypeScript 5.9, Vite, HTML Canvas 2D. No UI or chart libraries.
+- **Frontend:** React 19, TypeScript 5.9, Vite, HTML Canvas 2D. No UI or chart libraries. Fonts (Chakra Petch, IBM Plex Sans, JetBrains Mono) are self-hosted via Fontsource, so the strict CSP needs no third-party hosts.
 - **Quality:** ESLint, Vitest (frontend), `unittest` (pipeline).
 - **Hosting:** Vercel (static site). **No backend, no database, no environment variables.**
 
@@ -45,7 +46,7 @@ A browser tool for **Level Designers** to see how players actually move, fight, 
 ```
 data/player_data/        raw dataset as provided (parquet files, minimaps, README)
 pipeline/
-  build_data.py          parquet -> web/public/data/*.json (+ resized minimaps)
+  build_data.py          parquet -> web/public/data/*.json (+ resized minimaps and sidebar thumbnails)
   test_build_data.py     coordinate mapping, timestamps, bot detection, output checks
 web/                     the React app (deployed folder)
   public/data/           generated JSON (committed, so deploying needs no Python)
@@ -75,7 +76,7 @@ npm run dev                            # http://localhost:5173
 
 ```bash
 python -m unittest discover pipeline   # 10 pipeline tests (incl. the README's coordinate example)
-cd web && npm run check                # type-check + lint + 19 frontend tests
+cd web && npm run check                # type-check + lint + 20 frontend tests
 ```
 
 ## Deploy

@@ -33,7 +33,7 @@ export default function Sidebar({ index, filters, onChange, matches, counts, ope
   return (
     <aside className={`sidebar ${open ? "open" : ""}`} aria-label="Filters">
       <header className="brand">
-        <div className="brand-mark" />
+        <BrandMark />
         <div>
           <div className="brand-title">LILA BLACK</div>
           <div className="brand-sub">Player Journey Explorer</div>
@@ -54,9 +54,12 @@ export default function Sidebar({ index, filters, onChange, matches, counts, ope
               className={`map-row ${filters.mapId === m.id ? "on" : ""}`}
               onClick={() => onChange({ mapId: m.id, matchId: "all" })}
             >
+              <img className="map-thumb" src={`/${m.image.replace(/\.jpg$/, "_thumb.jpg")}`} alt="" width={36} height={36} />
+              <span className="map-text">
+                <span className="map-name">{MAP_LABELS[m.id] ?? m.id}</span>
+                <span className="map-meta">{matchCount(m.id)} matches</span>
+              </span>
               <span className="radio" aria-hidden />
-              <span className="map-name">{MAP_LABELS[m.id] ?? m.id}</span>
-              <span className="map-meta">{matchCount(m.id)} matches</span>
             </button>
           ))}
         </div>
@@ -135,9 +138,9 @@ export default function Sidebar({ index, filters, onChange, matches, counts, ope
 
       <section data-tour="heatmap">
         <h3>Heatmap</h3>
-        <div className="heat-grid">
+        <div className="heat-grid" role="group" aria-label="Heatmap">
           {HEATMAPS.map((h) => (
-            <button key={h.id} className={filters.heatmap === h.id ? "on" : ""} onClick={() => onChange({ heatmap: h.id })}>
+            <button key={h.id} className={filters.heatmap === h.id ? "on" : ""} aria-pressed={filters.heatmap === h.id} onClick={() => onChange({ heatmap: h.id })}>
               {h.label}
             </button>
           ))}
@@ -156,6 +159,18 @@ export default function Sidebar({ index, filters, onChange, matches, counts, ope
         Feb 10–14, 2026 · {index.matches.length} matches · 3 maps
       </footer>
     </aside>
+  );
+}
+
+/** Scope reticle: the tool is about looking closely at places on a map. */
+function BrandMark() {
+  return (
+    <svg className="brand-mark" width="30" height="30" viewBox="0 0 30 30" aria-hidden>
+      <rect x="0.5" y="0.5" width="29" height="29" rx="8" fill="var(--accent)" />
+      <circle cx="15" cy="15" r="7.5" fill="none" stroke="var(--accent-ink)" strokeWidth="2" />
+      <path d="M15 4.5v5M15 20.5v5M4.5 15h5M20.5 15h5" stroke="var(--accent-ink)" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="15" cy="15" r="1.8" fill="var(--accent-ink)" />
+    </svg>
   );
 }
 

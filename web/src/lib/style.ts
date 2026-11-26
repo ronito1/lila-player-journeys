@@ -1,5 +1,8 @@
 import type { Category } from "./types";
 
+/** Signal amber: the single accent (selection, hotspots, playhead). */
+export const ACCENT = "#f4b23e";
+
 // One place for the visual language so the legend and the canvas always agree.
 export const COLORS = {
   human: "#3ddc97",
