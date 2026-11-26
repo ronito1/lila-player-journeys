@@ -75,6 +75,18 @@ npx vercel --prod                      # framework: Vite, output: dist (auto-det
 
 From the Vercel dashboard instead: import the GitHub repo and set **Root Directory = `web`**. The defaults handle the rest.
 
+## Security & privacy
+
+The tool is a **static, read-only site**: no backend, database, logins, cookies, forms, secrets or third-party scripts. That keeps the attack surface small, and the measures below are sized to it.
+
+| Area | What's in place |
+|---|---|
+| Untrusted input | The only input is the URL (`map`, `date`, `match`, `heat`, `q`). Every value is checked against the real list of maps, dates and matches; unknown values fall back to safe defaults, and a match always opens on its own map. |
+| Injection (XSS) | No `innerHTML`/`eval`; all text is rendered through React, which escapes it. |
+| Browser security headers | `web/vercel.json` sets a strict Content-Security-Policy (`self` only, no inline scripts), `frame-ancestors 'none'` / `X-Frame-Options: DENY` (no clickjacking), `nosniff`, a strict referrer policy and a Permissions-Policy that disables camera, mic and location. Verified with zero CSP violations across every feature. |
+| Dependencies | `npm audit`: 0 known vulnerabilities. Only React at runtime. |
+| Data privacy | The dataset contains pseudonymous IDs only (random UUIDs / numeric bot IDs): no names, emails or IPs. It is LILA's production data, provided for this assignment; the processed JSON is public by nature of a static site. |
+
 ## Docs
 
 - [ARCHITECTURE.md](ARCHITECTURE.md): stack choices, data flow, coordinate mapping, assumptions, trade-offs

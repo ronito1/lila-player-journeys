@@ -16,7 +16,7 @@ const cache = new Map<string, Promise<FlatMap>>();
 /** Load one map's matches and flatten them into journeys + events (cached per map). */
 export function loadMap(mapId: string, categories: Record<string, Category>): Promise<FlatMap> {
   if (!cache.has(mapId)) {
-    const p = fetch(`/data/${mapId}.json`)
+    const p = fetch(`/data/${encodeURIComponent(mapId)}.json`)
       .then((r) => {
         if (!r.ok) throw new Error(`${mapId}.json: ${r.status}`);
         return r.json() as Promise<MapData>;

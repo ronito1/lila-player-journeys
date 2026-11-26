@@ -53,7 +53,30 @@ function initialState(): { filters: Filters; lens: LensId | null } {
   const l = lensById(lens);
   if (l && l.id !== "replay") return { filters: { ...base, ...l.patch, matchId: base.matchId }, lens };
   if (l?.id === "replay") return { filters: { ...base, ...l.patch }, lens: base.matchId !== "all" ? lens : null };
-  return { filters: { ...base, ...withHeatmapRule(base, { heatmap: (q.get("heat") as Filters["heatmap"]) ?? "off" }) }, lens: null };
+  const heatParam = q.get("heat") as Filters["heatmap"] | null;
+  const heatmap = heatParam && HEATMAP_KINDS.includes(heatParam) ? heatParam : "off"; // ignore unknown values
+  return { filters: { ...base, ...withHeatmapRule(base, { heatmap }) }, lens: null };
+}
+
+const HEATMAP_KINDS: Filters["heatmap"][] = ["off", "traffic", "kill", "death", "storm", "loot"];
+
+/**
+ * URL values are untrusted (a link can be edited or truncated). Once the real list of maps, dates and
+ * matches is known, replace anything unknown with a safe default; a match opens on its own map.
+ */
+function sanitizeFilters(f: Filters, idx: DataIndex): Filters {
+  let { mapId, date, matchId } = f;
+  if (!idx.maps.some((m) => m.id === mapId)) mapId = DEFAULT_FILTERS.mapId;
+  if (date !== "all" && !idx.dates.includes(date)) date = "all";
+  if (matchId !== "all") {
+    const meta = idx.matches.find((m) => m.id === matchId);
+    if (!meta) matchId = "all";
+    else {
+      mapId = meta.map;
+      if (date !== "all" && date !== meta.date) date = meta.date;
+    }
+  }
+  return { ...f, mapId, date, matchId };
 }
 
 const HOTSPOT_NOUN: Record<string, string> = {
@@ -152,11 +175,25 @@ export default function App() {
 
   // --- data loading -----------------------------------------------------------------
   useEffect(() => {
-    loadIndex().then(setIndex).catch((e) => setError(String(e)));
-  }, []);
+    loadIndex()
+      .then((idx) => {
+        // validate the URL-provided map/date/match before anything is fetched with them
+        const clean = sanitizeFilters(init.filters, idx);
+        const lostMatch = init.filters.matchId !== "all" && clean.matchId === "all";
+        if (lostMatch) {
+          // the linked match doesn't exist: land on the default question instead of an empty view
+          setLens("traffic");
+          setFilters((f) => ({ ...f, ...lensById("traffic")!.patch, mapId: clean.mapId, date: clean.date, matchId: "all" }));
+        } else {
+          setFilters((f) => ({ ...f, mapId: clean.mapId, date: clean.date, matchId: clean.matchId }));
+        }
+        setIndex(idx);
+      })
+      .catch((e) => setError(String(e)));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!index) return;
+    if (!index || !index.maps.some((m) => m.id === filters.mapId)) return;
     setMapData(null);
     loadMap(filters.mapId, index.eventCategories).then(setMapData).catch((e) => setError(String(e)));
   }, [index, filters.mapId]);
