@@ -3,7 +3,7 @@ import type { GameEvent, Journey } from "../lib/types";
 import type { Hotspot } from "../lib/insights";
 import { COLORS, drawMarker } from "../lib/style";
 import { clock, describeEvent } from "../lib/format";
-import { IconFit, IconMinus, IconPlus } from "./Icons";
+import { IconExpand, IconFit, IconMinus, IconPlus, IconShrink } from "./Icons";
 
 export interface FocusRequest {
   x: number;
@@ -24,6 +24,8 @@ interface Props {
   hotspots: Hotspot[];
   focus: FocusRequest | null;
   backdrop: string;
+  fullscreen: boolean;
+  onToggleFullscreen: () => void;
   onOpenMatch: (matchId: string) => void;
 }
 
@@ -53,7 +55,7 @@ const MARKER_ORDER = { loot: 0, death: 1, storm: 2, kill: 3 } as const; // comba
  * burst of wheel events costs one draw, never a queue of draws.
  */
 export default function MapView(props: Props) {
-  const { imageUrl, mapSize, journeys, events, showPaths, time, singleMatch, heat, hotspots, focus, backdrop, onOpenMatch } = props;
+  const { imageUrl, mapSize, journeys, events, showPaths, time, singleMatch, heat, hotspots, focus, backdrop, fullscreen, onToggleFullscreen, onOpenMatch } = props;
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState({ w: 800, h: 600 });
@@ -190,8 +192,15 @@ export default function MapView(props: Props) {
       zoomLabelRef.current = view.zoom;
       setZoomLabel(view.zoom);
     }
+    const fitted = view.zoom < 1.01 && Math.abs(view.cx - L.mapSize / 2) < 2 && Math.abs(view.cy - L.mapSize / 2) < 2;
+    if (fitted !== fittedRef.current) {
+      fittedRef.current = fitted;
+      setIsFitted(fitted);
+    }
   };
   const zoomLabelRef = useRef(1);
+  const fittedRef = useRef(true);
+  const [isFitted, setIsFitted] = useState(true);
 
   const requestDraw = useCallback(() => {
     if (raf.current) return;
@@ -456,8 +465,16 @@ export default function MapView(props: Props) {
         <button onClick={() => zoomBy(1 / STEP)} disabled={zoomLabel <= MIN_ZOOM + 0.01} aria-label="Zoom out" title="Zoom out (−)">
           <IconMinus />
         </button>
-        <button onClick={resetView} aria-label="Fit map" title="Fit whole map (0)">
+        <button onClick={resetView} disabled={isFitted} aria-label="Fit map" title="Fit the whole map on screen (0)">
           <IconFit />
+        </button>
+        <button
+          onClick={onToggleFullscreen}
+          aria-label={fullscreen ? "Exit full screen" : "Full screen"}
+          title={fullscreen ? "Exit full screen (Esc)" : "Full screen: just the map and timeline"}
+          className="fs-btn"
+        >
+          {fullscreen ? <IconShrink /> : <IconExpand />}
         </button>
       </div>
 

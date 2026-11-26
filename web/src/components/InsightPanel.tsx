@@ -22,6 +22,16 @@ export default function InsightPanel(p: Props) {
   const [open, setOpen] = useState(() => window.innerWidth > 640);
   const listRef = useRef<HTMLOListElement>(null);
 
+  // On phones the panel covers part of the map: tuck it away as soon as the user touches the map.
+  useEffect(() => {
+    const onDown = (e: PointerEvent) => {
+      if (window.innerWidth > 640) return;
+      if ((e.target as HTMLElement).closest?.(".map-wrap canvas, .zoom-ctrl")) setOpen(false);
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, []);
+
   // keep the current moment of a playing match in view
   const current = p.story ? p.story.moments.filter((m) => m.t <= p.time).length - 1 : -1;
   useEffect(() => {

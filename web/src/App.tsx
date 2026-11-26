@@ -7,7 +7,7 @@ import InsightPanel from "./components/InsightPanel";
 import Tour, { WelcomeCard, type TourStep } from "./components/Tour";
 import { IconHelp, IconLink, IconMenu, IconMoon, IconSun } from "./components/Icons";
 import { useTheme } from "./lib/theme";
-import { loadIndex, loadMap, type FlatMap } from "./lib/data";
+import { forgetMap, loadIndex, loadMap, prefetchMaps, type FlatMap } from "./lib/data";
 import { buildHeatmap } from "./lib/heatmap";
 import { findHotspots, matchStory, playableBounds, viewStats, type Moment } from "./lib/insights";
 import { lensById, type LensId } from "./lib/lenses";
@@ -104,7 +104,39 @@ export default function App() {
   const [tourOpen, setTourOpen] = useState(false);
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem(TOUR_SEEN_KEY));
   const [copied, setCopied] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
+  const [slowLoad, setSlowLoad] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [fullscreen, setFullscreen] = useState(false);
   const isMobile = useMediaQuery("(max-width: 900px)");
+
+  /**
+   * Full screen = only the map and the timeline. Uses the browser's real full-screen mode where it
+   * exists (desktop, Android); on iPhone, which doesn't allow it for web pages, the page itself
+   * hides everything else, which looks the same.
+   */
+  const toggleFullscreen = () => {
+    const next = !fullscreen;
+    setFullscreen(next);
+    const el = document.documentElement;
+    if (next && el.requestFullscreen && !document.fullscreenElement) el.requestFullscreen().catch(() => {});
+    if (!next && document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  };
+  useEffect(() => {
+    const onChange = () => !document.fullscreenElement && setFullscreen(false); // Esc in native full screen
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setFullscreen(false);
+    document.addEventListener("fullscreenchange", onChange);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("fullscreenchange", onChange);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
+  const retryMap = () => {
+    forgetMap(filters.mapId);
+    setReloadKey((k) => k + 1);
+  };
 
   const startTour = () => {
     localStorage.setItem(TOUR_SEEN_KEY, "1");
@@ -194,9 +226,27 @@ export default function App() {
 
   useEffect(() => {
     if (!index || !index.maps.some((m) => m.id === filters.mapId)) return;
+    let current = true; // ignore answers for a map the user has already switched away from
     setMapData(null);
-    loadMap(filters.mapId, index.eventCategories).then(setMapData).catch((e) => setError(String(e)));
-  }, [index, filters.mapId]);
+    setMapError(null);
+    setSlowLoad(false);
+    const slowTimer = setTimeout(() => current && setSlowLoad(true), 6000);
+    loadMap(filters.mapId, index.eventCategories)
+      .then((d) => current && setMapData(d))
+      .catch((e) => current && setMapError(String((e as Error).message ?? e)))
+      .finally(() => clearTimeout(slowTimer));
+    return () => {
+      current = false;
+      clearTimeout(slowTimer);
+    };
+  }, [index, filters.mapId, reloadKey]);
+
+  // once the first map is on screen, quietly download the others so switching is instant
+  const loadedOnce = mapData !== null;
+  useEffect(() => {
+    if (!index || !loadedOnce) return;
+    prefetchMaps(index.maps.map((m) => m.id).filter((id) => id !== filters.mapId), index.eventCategories);
+  }, [index, loadedOnce]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const q = new URLSearchParams();
@@ -369,7 +419,7 @@ export default function App() {
   })();
 
   return (
-    <div className="app">
+    <div className={`app ${fullscreen ? "fullscreen" : ""}`}>
       <Sidebar
         index={index}
         filters={filters}
@@ -436,11 +486,32 @@ export default function App() {
               hotspots={hotspots}
               focus={focus}
               backdrop={backdrop}
+              fullscreen={fullscreen}
+              onToggleFullscreen={toggleFullscreen}
               onOpenMatch={openMatch}
             />
           ) : (
             <div className="map-wrap">
-              <div className="map-loading">Loading {MAP_LABELS[filters.mapId]}…</div>
+              <div className="map-loading">
+                {mapError ? (
+                  <div className="load-msg">
+                    <b>Couldn't load {MAP_LABELS[filters.mapId]}</b>
+                    <span>{mapError}. Check your connection and try again.</span>
+                    <button className="btn primary" onClick={retryMap}>Retry</button>
+                  </div>
+                ) : (
+                  <div className="load-msg">
+                    <span className="spinner" aria-hidden />
+                    <span>Loading {MAP_LABELS[filters.mapId]}…</span>
+                    {slowLoad && (
+                      <>
+                        <span className="muted-s">This is taking longer than usual (slow connection?).</span>
+                        <button className="btn" onClick={retryMap}>Retry</button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           )}
           <InsightPanel

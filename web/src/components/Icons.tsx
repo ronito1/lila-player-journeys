@@ -9,8 +9,19 @@ const Svg = ({ size = 16, children }: P & { children: React.ReactNode }) => (
 
 export const IconPlus = (p: P) => <Svg {...p}><path d="M12 5v14M5 12h14" /></Svg>;
 export const IconMinus = (p: P) => <Svg {...p}><path d="M5 12h14" /></Svg>;
+/** fit the whole map back on screen */
 export const IconFit = (p: P) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="7" />
+    <circle cx="12" cy="12" r="1.5" />
+    <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+  </Svg>
+);
+export const IconExpand = (p: P) => (
   <Svg {...p}><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></Svg>
+);
+export const IconShrink = (p: P) => (
+  <Svg {...p}><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" /></Svg>
 );
 export const IconSun = (p: P) => (
   <Svg {...p}>
