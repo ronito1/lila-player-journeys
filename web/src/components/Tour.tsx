@@ -129,14 +129,22 @@ export default function Tour({ open, onClose, onStep }: Props) {
     cardStyle = { left, top, width: CARD_W };
   }
 
+  // Spotlight = target + padding, clamped inside the window so full-width targets
+  // (question bar, timeline, map) never draw past the screen edge.
+  const EDGE = 3;
+  const spot = rect && (() => {
+    const l = Math.max(EDGE, rect.left - PAD);
+    const t = Math.max(EDGE, rect.top - PAD);
+    const r = Math.min(vw - EDGE, rect.left + rect.width + PAD);
+    const b = Math.min(vh - EDGE, rect.top + rect.height + PAD);
+    return { left: l, top: t, width: Math.max(0, r - l), height: Math.max(0, b - t) };
+  })();
+
   return (
     <div className="tour" role="dialog" aria-modal="true" aria-label="Guided tour">
       <div className="tour-catcher" onClick={onClose} />
-      {rect && (
-        <div
-          className="tour-spot"
-          style={{ top: rect.top - PAD, left: rect.left - PAD, width: rect.width + PAD * 2, height: rect.height + PAD * 2 }}
-        />
+      {spot && (
+        <div className="tour-spot" style={spot} />
       )}
       <div className="tour-card" ref={cardRef} style={cardStyle}>
         <div className="tour-head">
