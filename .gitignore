@@ -1,0 +1,7 @@
+.venv/
+node_modules/
+web/dist/
+.DS_Store
+.vercel
+__pycache__/
+*.tsbuildinfo
