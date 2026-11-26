@@ -2,7 +2,7 @@
 
 A browser tool for **Level Designers** to see how players actually move, fight, loot and die on LILA BLACK's three maps. It's built from 5 days of production telemetry (Feb 10–14, 2026).
 
-**Live tool:** LIVE_URL_HERE
+**Live tool:** https://lila-prod-player-jr.vercel.app/
 
 ![Where do players go? (Ambrose Valley)](docs/overview.png)
 
