@@ -76,3 +76,15 @@ export interface GameEvent {
 }
 
 export type HeatmapKind = "off" | "traffic" | Category;
+
+/** Everything the user can choose; together with the active question it defines the view. */
+export interface Filters {
+  mapId: string;
+  date: string; // "all" or a folder name such as "February_10"
+  matchId: string; // "all" or a match id
+  humans: boolean;
+  bots: boolean;
+  paths: boolean;
+  cats: Record<Category, boolean>;
+  heatmap: HeatmapKind;
+}

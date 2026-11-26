@@ -1,4 +1,4 @@
-import type { Category, DataIndex, HeatmapKind, MatchMeta } from "../lib/types";
+import type { Category, DataIndex, Filters, HeatmapKind, MatchMeta } from "../lib/types";
 import { CATEGORIES } from "../lib/types";
 import { CATEGORY_LABELS, MAP_LABELS, clock, dateLabel, matchLabel } from "../lib/format";
 import { COLORS } from "../lib/style";
@@ -6,16 +6,6 @@ import { HEAT_GRADIENT_CSS } from "../lib/heatmap";
 import MarkerIcon from "./MarkerIcon";
 import { IconBack, IconClose } from "./Icons";
 
-export interface Filters {
-  mapId: string;
-  date: string; // "all" or folder name
-  matchId: string; // "all" or match id
-  humans: boolean;
-  bots: boolean;
-  paths: boolean;
-  cats: Record<Category, boolean>;
-  heatmap: HeatmapKind;
-}
 
 interface Props {
   index: DataIndex;

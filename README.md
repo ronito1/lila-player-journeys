@@ -36,18 +36,23 @@ A browser tool for **Level Designers** to see how players actually move, fight, 
 ## Tech stack
 
 - **Data pipeline:** Python 3.10+, pandas, pyarrow, Pillow (`pipeline/build_data.py`)
-- **Frontend:** React 19, TypeScript, Vite, HTML Canvas 2D. No UI or chart libraries.
+- **Frontend:** React 19, TypeScript 5.9, Vite, HTML Canvas 2D. No UI or chart libraries.
+- **Quality:** ESLint, Vitest (frontend), `unittest` (pipeline).
 - **Hosting:** Vercel (static site). **No backend, no database, no environment variables.**
 
 ## Repo layout
 
 ```
 data/player_data/        raw dataset as provided (parquet files, minimaps, README)
-pipeline/build_data.py   parquet -> web/public/data/*.json (+ resized minimaps)
+pipeline/
+  build_data.py          parquet -> web/public/data/*.json (+ resized minimaps)
+  test_build_data.py     coordinate mapping, timestamps, bot detection, output checks
 web/                     the React app (deployed folder)
   public/data/           generated JSON (committed, so deploying needs no Python)
-  src/lib/               types, data loading, heatmap, lenses (question presets), insights (hotspots, stories)
-  src/components/        Sidebar, MapView (canvas), Timeline, QuestionBar, InsightPanel, Tour, …
+  src/lib/               pure logic: URL state, hotspots & match stories, panel text, heatmap (unit-tested)
+  src/hooks/             data loading, playback clock, derived view data, full screen
+  src/components/        UI only: MapView (canvas), Sidebar, TopBar, QuestionBar, InsightPanel, Timeline, Tour
+  vercel.json            security headers
 ARCHITECTURE.md          design decisions, data flow, coordinate mapping, trade-offs
 INSIGHTS.md              three findings about the game, with evidence
 ```
@@ -64,6 +69,13 @@ python pipeline/build_data.py          # ~6 s, prints a cleaning summary
 cd web
 npm install
 npm run dev                            # http://localhost:5173
+```
+
+## Tests & checks
+
+```bash
+python -m unittest discover pipeline   # 10 pipeline tests (incl. the README's coordinate example)
+cd web && npm run check                # type-check + lint + 19 frontend tests
 ```
 
 ## Deploy

@@ -1,6 +1,6 @@
 # Three things I learned about LILA BLACK using the tool
 
-All numbers come from the full Feb 10–14 dataset (796 matches, 798 human runs). You can reproduce each one in the tool with the filters named under **How to see it**.
+All numbers come from the full Feb 10–14 dataset (796 matches, 798 human runs). Each insight can be reproduced in the live tool with one click on the question named under **How to see it**: the explanation panel shows the same numbers.
 
 ---
 
@@ -20,7 +20,7 @@ All numbers come from the full Feb 10–14 dataset (796 matches, 798 human runs)
 
 **Why a level designer should care.** Encounter difficulty is currently set by where bots stand, not by how players meet each other. Sightlines, cover and chokepoints should be judged against bot behaviour first.
 
-**How to see it:** any map → Heatmap *Deaths*, then untick *Bots*. Compare the *Kills* count (top bar) with the Humans/Bots toggles.
+**How to see it:** click **Where do fights happen?** (the panel shows, e.g. on Ambrose Valley, *“Players killed 1,677 bots and only 2 other players”*), then **Where do players die?** for the cause-of-death split.
 
 ---
 
@@ -37,7 +37,7 @@ All numbers come from the full Feb 10–14 dataset (796 matches, 798 human runs)
 | Lockdown | 171 | 17 | **9.9%** | 7:28 |
 
 - Storm deaths happen **late and in a tight window**: earliest at 10:55, with the median between 11:56 and 12:41 into the match on every map.
-- On Lockdown they are **spread across the whole map** (x from 151 to 836 px), not clustered on one edge. That points to a timing or extraction-readability problem, not one bad route.
+- On Lockdown they are **spread across the map** (x from 151 to 836 px): the busiest storm hotspot holds only 29% of them. That points to a timing or extraction-readability problem, not one bad route.
 
 **Actionable?** Yes.
 - *Actions:* on Lockdown and Grand Rift, add or move an extraction point toward the areas where runs are still alive at 10–11 minutes. Make extraction routes readable (landmarks, signage). Consider an earlier storm warning on the smaller maps.
@@ -45,7 +45,7 @@ All numbers come from the full Feb 10–14 dataset (796 matches, 798 human runs)
 
 **Why a level designer should care.** A storm death usually means the map didn't show the player the way out in time. That makes it a layout and readability problem, not a skill problem.
 
-**How to see it:** Lockdown → Heatmap *Storm*, or tick only *Storm deaths*. Drag the timeline to about 11:00 and watch them appear.
+**How to see it:** pick Lockdown, click **Where does the storm catch people?** (panel: *“17 storm deaths in 171 runs (10% of runs) … around 12:41 into the match”*). Drag the timeline to about 11:00 and watch them appear.
 
 ---
 
@@ -69,6 +69,8 @@ All numbers come from the full Feb 10–14 dataset (796 matches, 798 human runs)
 - *Actions:* move some high-value loot out of the Mine Pit to Gas Station and Maintenance Bay to spread players out. Add a second route out of the pit, because deaths cluster at its north and south ends. Give the edge locations a reason to visit (an objective or extraction point).
 - *Metrics affected:* share of traffic per location (aim for a flatter distribution), deaths per location, loot per run, match length.
 
-**Why a level designer should care.** When one location pulls in 44% of deaths and 21% of loot, the rest of the map is decoration. Wasted art and layout budget, and repetitive matches.
+The tool's hotspot panel draws a slightly wider circle around the pit and reports **56%** of player deaths there; either way, roughly half of all deaths happen in one location.
 
-**How to see it:** Grand Rift → Heatmap *Deaths*, then *Loot*, then *Traffic*.
+**Why a level designer should care.** When one location pulls in about half of all deaths and 21% of loot, the rest of the map is decoration. Wasted art and layout budget, and repetitive matches.
+
+**How to see it:** pick Grand Rift, click **Where do players die?** (hotspot ① *Mine Pit*), then **Where is the loot?** and **Where do players go?**.

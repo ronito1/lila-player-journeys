@@ -16,7 +16,7 @@ async function fetchJson<T>(url: string): Promise<T> {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return (await res.json()) as T; // the time limit also covers reading the body
     } catch (e) {
-      if (attempt >= RETRIES) throw new Error(ctrl.signal.aborted ? "the download timed out" : String((e as Error).message ?? e));
+      if (attempt >= RETRIES) throw new Error(ctrl.signal.aborted ? "the download timed out" : String((e as Error).message ?? e), { cause: e });
       await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
     } finally {
       clearTimeout(timer);

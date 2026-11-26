@@ -1,7 +1,6 @@
 // "Lenses" = the questions a level designer asks. Each one is a filter preset plus the words
 // that explain what the resulting view shows.
-import type { Filters } from "../components/Sidebar";
-import type { HeatmapKind } from "./types";
+import type { Filters, HeatmapKind } from "./types";
 import { clock } from "./format";
 import { pct, type ViewStats } from "./insights";
 

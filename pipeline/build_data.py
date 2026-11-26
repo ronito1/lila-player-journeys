@@ -83,7 +83,9 @@ def clean(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
 
     # 2. `ts` is labelled milliseconds but the integer is actually Unix *seconds*
     #    (1_770_727_161 -> 2026-02-10 12:39 UTC, matching the folder dates).
-    df["t_abs"] = df["ts"].astype("int64")
+    #    Cast to millisecond resolution explicitly: the raw integer only comes back unchanged if the
+    #    column is stored as datetime64[ms], which depends on the pandas/pyarrow version.
+    df["t_abs"] = df["ts"].astype("datetime64[ms]").astype("int64")
     df = df.drop(columns=["ts"])
 
     # 3. Exact duplicate Position pings carry no information -> drop. Duplicate Loot rows

@@ -350,7 +350,7 @@ export default function MapView(props: Props) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }); // eslint-disable-line react-hooks/exhaustive-deps
+  }); // no dependency list on purpose: re-subscribes each render so the handler always sees current state
 
   // ---- pointer interaction (mouse, pen, touch; two fingers = pinch) --------------------------
   const local = (e: React.PointerEvent | React.MouseEvent) => {
